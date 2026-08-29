@@ -40,7 +40,6 @@
       transition: background-color 0.3s, color 0.3s;
     }
 
-    /* Header e Logo */
     header {
       display: flex;
       flex-wrap: wrap;
@@ -78,7 +77,6 @@
       letter-spacing: -0.5px;
     }
 
-    /* Controles do Menu Superior */
     .controls-top {
       display: flex;
       flex-wrap: wrap;
@@ -147,7 +145,6 @@
       transform: translateY(-1px);
     }
 
-    /* Masonry Grid */
     .notes-grid {
       display: flex;
       gap: 20px;
@@ -163,7 +160,6 @@
       min-width: 0;
     }
 
-    /* Card da Nota - Suporte a cores no Modo Escuro */
     .note-card {
       background-color: var(--card-bg);
       border-radius: 12px;
@@ -195,7 +191,6 @@
       transform: scale(1.03) rotate(2deg);
       box-shadow: 0 15px 25px rgba(0, 0, 0, 0.15);
       border: 2px dashed var(--primary-green) !important;
-      cursor: grabbing;
     }
 
     .note-card.drag-over {
@@ -268,7 +263,6 @@
       border-color: rgba(0, 0, 0, 0.1);
     }
 
-    /* Toolbar da Nota */
     .toolbar {
       display: flex;
       gap: 6px;
@@ -298,7 +292,6 @@
       background: rgba(0,0,0,0.1);
     }
 
-    /* Conteúdo expansível */
     .note-content {
       min-height: 80px;
       height: auto;
@@ -324,7 +317,6 @@
       margin-left: 20px;
     }
 
-    /* Paleta de Cores Expandida (12 Cores) */
     .color-picker {
       display: flex;
       align-items: center;
@@ -351,7 +343,6 @@
       transform: scale(1.25);
     }
 
-    /* Ações inferiores */
     .note-footer {
       display: flex;
       justify-content: flex-end;
@@ -394,7 +385,6 @@
   <main class="notes-grid" id="notesGrid"></main>
 
   <script>
-    // 12 Cores Pastel
     const colors = [
       '#ffffff', '#fef08a', '#bbf7d0', '#bfdbfe', 
       '#e9d5ff', '#fbcfe8', '#fed7aa', '#cbd5e1',
@@ -503,7 +493,6 @@
         const card = document.createElement('div');
         card.className = `note-card ${note.pinned ? 'pinned' : ''}`;
         card.style.backgroundColor = note.color;
-        card.draggable = true;
         card.dataset.index = originalIndex;
 
         const colorDotsHTML = colors.map(c => 
@@ -551,7 +540,6 @@
           </div>
         `;
 
-        card.addEventListener('dragstart', handleDragStart);
         card.addEventListener('dragenter', handleDragEnter);
         card.addEventListener('dragover', handleDragOver);
         card.addEventListener('dragleave', handleDragLeave);
@@ -559,6 +547,16 @@
         card.addEventListener('dragend', handleDragEnd);
 
         const dragHandle = card.querySelector('.drag-handle');
+        
+        // Permite arrastar no Desktop APENAS via drag-handle
+        dragHandle.addEventListener('mousedown', () => {
+          card.draggable = true;
+        });
+        card.addEventListener('dragstart', (e) => {
+          handleDragStart.call(card, e);
+        });
+
+        // Touch handlers no Mobile
         dragHandle.addEventListener('touchstart', handleTouchStart, { passive: false });
         dragHandle.addEventListener('touchmove', handleTouchMove, { passive: false });
         dragHandle.addEventListener('touchend', handleTouchEnd);
@@ -743,6 +741,7 @@
     }
 
     function handleDragEnd() {
+      this.draggable = false;
       this.classList.remove('dragging');
       document.querySelectorAll('.note-card').forEach(card => card.classList.remove('drag-over'));
     }
