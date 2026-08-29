@@ -1,0 +1,794 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Modular Notes</title>
+  <style>
+    :root {
+      --bg-color: #f3f4f6;
+      --card-bg: #ffffff;
+      --primary-green: #10b981;
+      --primary-green-hover: #059669;
+      --border-color: #e5e7eb;
+      --text-main: #1f2937;
+      --text-muted: #6b7280;
+      --input-bg: #ffffff;
+    }
+
+    [data-theme="dark"] {
+      --bg-color: #111827;
+      --card-bg: #1f2937;
+      --border-color: #374151;
+      --text-main: #f9fafb;
+      --text-muted: #9ca3af;
+      --input-bg: #374151;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 20px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    /* Header e Logo */
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      align-items: center;
+      justify-content: flex-start;
+      margin-bottom: 30px;
+    }
+
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+    }
+
+    .logo-icon {
+      background: linear-gradient(135deg, var(--primary-green), #047857);
+      color: white;
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      font-size: 20px;
+      box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 800;
+      color: var(--text-main);
+      letter-spacing: -0.5px;
+    }
+
+    /* Controles do Menu Superior */
+    .controls-top {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .search-input, .select-filter, .btn-action {
+      padding: 9px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      outline: none;
+      font-size: 14px;
+      background-color: var(--input-bg);
+      color: var(--text-main);
+      transition: all 0.2s ease;
+    }
+
+    .search-input {
+      width: 180px;
+    }
+
+    .btn-action:hover {
+      background-color: rgba(0, 0, 0, 0.05);
+    }
+
+    [data-theme="dark"] .btn-action:hover {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .btn-new-note {
+      background-color: var(--primary-green);
+      color: white;
+      border: none;
+      padding: 9px 16px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: background 0.2s;
+    }
+
+    .btn-new-note:hover {
+      background-color: var(--primary-green-hover);
+    }
+
+    .btn-theme {
+      background: var(--input-bg);
+      border: 1px solid var(--border-color);
+      padding: 9px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-theme:hover {
+      border-color: var(--primary-green);
+      transform: translateY(-1px);
+    }
+
+    /* Masonry Grid */
+    .notes-grid {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      width: 100%;
+    }
+
+    .masonry-column {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    /* Card da Nota - Suporte a cores no Modo Escuro */
+    .note-card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+      border: 2px solid transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease, opacity 0.2s ease;
+      touch-action: pan-y;
+      position: relative;
+    }
+
+    [data-theme="dark"] .note-card {
+      color: #1f2937;
+    }
+
+    [data-theme="dark"] .note-title-input {
+      color: #1f2937;
+    }
+
+    .note-card.pinned {
+      border: 2px solid var(--primary-green) !important;
+    }
+
+    .note-card.dragging {
+      opacity: 0.6;
+      transform: scale(1.03) rotate(2deg);
+      box-shadow: 0 15px 25px rgba(0, 0, 0, 0.15);
+      border: 2px dashed var(--primary-green) !important;
+      cursor: grabbing;
+    }
+
+    .note-card.drag-over {
+      border: 2px dashed var(--primary-green) !important;
+      transform: scale(0.98);
+    }
+
+    .drag-handle {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      cursor: grab;
+      user-select: none;
+      padding: 4px 0;
+    }
+
+    [data-theme="dark"] .drag-handle {
+      color: #4b5563;
+    }
+
+    .drag-handle:active {
+      cursor: grabbing;
+    }
+
+    .btn-pin {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      opacity: 0.5;
+      transition: opacity 0.2s;
+    }
+
+    .btn-pin.active, .btn-pin:hover {
+      opacity: 1;
+    }
+
+    .note-title-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .note-title-input {
+      font-size: 18px;
+      font-weight: bold;
+      border: none;
+      background: transparent;
+      outline: none;
+      width: 100%;
+      color: var(--text-main);
+    }
+
+    .group-select {
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 2px 6px;
+      font-size: 12px;
+      background: var(--input-bg);
+      color: var(--text-main);
+      outline: none;
+    }
+
+    [data-theme="dark"] .group-select {
+      background: rgba(255, 255, 255, 0.8);
+      color: #1f2937;
+      border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    /* Toolbar da Nota */
+    .toolbar {
+      display: flex;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.05);
+      padding: 6px;
+      border-radius: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    .toolbar button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 13px;
+      color: var(--text-main);
+    }
+
+    [data-theme="dark"] .toolbar button {
+      color: #1f2937;
+    }
+
+    .toolbar button:hover {
+      background: rgba(0,0,0,0.1);
+    }
+
+    /* Conteúdo expansível */
+    .note-content {
+      min-height: 80px;
+      height: auto;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.5);
+      outline: none;
+      font-size: 14px;
+      line-height: 1.5;
+      overflow-y: visible;
+      word-break: break-word;
+      color: var(--text-main);
+    }
+
+    [data-theme="dark"] .note-content {
+      background: rgba(255, 255, 255, 0.7);
+      color: #1f2937;
+      border-color: rgba(0, 0, 0, 0.1);
+    }
+
+    .note-content ul {
+      margin-left: 20px;
+    }
+
+    /* Paleta de Cores Expandida (12 Cores) */
+    .color-picker {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 12px;
+      color: var(--text-muted);
+      flex-wrap: wrap;
+    }
+
+    [data-theme="dark"] .color-picker {
+      color: #4b5563;
+    }
+
+    .color-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 1px solid rgba(0,0,0,0.15);
+      transition: transform 0.1s;
+    }
+
+    .color-dot:hover {
+      transform: scale(1.25);
+    }
+
+    /* Ações inferiores */
+    .note-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 5px;
+    }
+
+    .btn-delete {
+      color: #ef4444;
+      border-color: #fca5a5;
+    }
+
+    .btn-delete:hover {
+      background: #fef2f2;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="logo-container">
+      <div class="logo-icon">⊞</div>
+      <h1 class="title">Modular Notes</h1>
+    </div>
+    
+    <div class="controls-top">
+      <button class="btn-new-note" onclick="createNote()">+ Nova Nota</button>
+      <input type="text" id="searchInput" class="search-input" placeholder="Pesquisar..." oninput="filterNotes()">
+      <select id="groupFilter" class="select-filter" onchange="filterNotes()"></select>
+      <button class="btn-action" onclick="addGroupPrompt()">+ Grupo</button>
+      <button class="btn-action" onclick="exportNotes()">Exportar JSON</button>
+      <button class="btn-action" onclick="document.getElementById('importInput').click()">Importar JSON</button>
+      <button class="btn-theme" onclick="toggleTheme()" id="themeBtn" title="Alternar Tema">
+        <span id="themeIcon">🌙</span> <span id="themeText">Escuro</span>
+      </button>
+      <input type="file" id="importInput" accept=".json" style="display: none;" onchange="importNotes(event)">
+    </div>
+  </header>
+
+  <main class="notes-grid" id="notesGrid"></main>
+
+  <script>
+    // 12 Cores Pastel
+    const colors = [
+      '#ffffff', '#fef08a', '#bbf7d0', '#bfdbfe', 
+      '#e9d5ff', '#fbcfe8', '#fed7aa', '#cbd5e1',
+      '#ddd6fe', '#a7f3d0', '#fecdd3', '#e2e8f0'
+    ];
+
+    let groupsData = JSON.parse(localStorage.getItem('modular_groups')) || ['Geral', 'Estudos', 'Trabalho'];
+
+    let notesData = JSON.parse(localStorage.getItem('modular_notes')) || [
+      {
+        id: 1,
+        title: 'Minha primeira nota',
+        group: 'Geral',
+        color: '#ffffff',
+        pinned: false,
+        content: 'Use <b>A+</b> e <b>A-</b> para controlar o tamanho do texto dentro do limite seguro, e a <b>Lista</b> para organizar tópicos!'
+      },
+      {
+        id: 2,
+        title: 'Metas e Ideias',
+        group: 'Estudos',
+        color: '#bbf7d0',
+        pinned: true,
+        content: '<ul><li>Aprender novas tecnologias</li><li>Organizar tarefas diárias</li></ul>'
+      }
+    ];
+
+    let currentTheme = localStorage.getItem('modular_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', currentTheme);
+
+    function updateThemeButtonUI() {
+      const isDark = currentTheme === 'dark';
+      document.getElementById('themeIcon').textContent = isDark ? '☀️' : '🌙';
+      document.getElementById('themeText').textContent = isDark ? 'Claro' : 'Escuro';
+    }
+
+    function toggleTheme() {
+      currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', currentTheme);
+      localStorage.setItem('modular_theme', currentTheme);
+      updateThemeButtonUI();
+      renderNotes();
+    }
+
+    function saveToLocalStorage() {
+      localStorage.setItem('modular_notes', JSON.stringify(notesData));
+      localStorage.setItem('modular_groups', JSON.stringify(groupsData));
+    }
+
+    function updateGroupFilterDropdown() {
+      const select = document.getElementById('groupFilter');
+      const currentSelected = select.value || 'Todos';
+      select.innerHTML = '<option value="Todos">Todos os Grupos</option>';
+      groupsData.forEach(g => {
+        select.innerHTML += `<option value="${g}">${g}</option>`;
+      });
+      select.value = currentSelected;
+    }
+
+    function addGroupPrompt() {
+      const newGroup = prompt("Digite o nome do novo grupo:");
+      if (newGroup && newGroup.trim() !== "" && !groupsData.includes(newGroup.trim())) {
+        groupsData.push(newGroup.trim());
+        saveToLocalStorage();
+        updateGroupFilterDropdown();
+        renderNotes();
+      }
+    }
+
+    function getColumnCount() {
+      const width = window.innerWidth;
+      if (width <= 600) return 1;
+      if (width <= 900) return 2;
+      if (width <= 1200) return 3;
+      return 4;
+    }
+
+    function renderNotes(filterText = '', filterGroup = 'Todos') {
+      updateGroupFilterDropdown();
+      updateThemeButtonUI();
+
+      const grid = document.getElementById('notesGrid');
+      grid.innerHTML = '';
+
+      const columnCount = getColumnCount();
+      const columns = [];
+
+      for (let i = 0; i < columnCount; i++) {
+        const col = document.createElement('div');
+        col.className = 'masonry-column';
+        columns.push(col);
+        grid.appendChild(col);
+      }
+
+      const sortedNotes = [...notesData].sort((a, b) => (b.pinned ? 1 : 0) - (a.pinned ? 1 : 0));
+
+      let visibleIndex = 0;
+      sortedNotes.forEach((note) => {
+        const originalIndex = notesData.findIndex(n => n.id === note.id);
+        const matchesSearch = note.title.toLowerCase().includes(filterText.toLowerCase()) || 
+                              note.content.toLowerCase().includes(filterText.toLowerCase());
+        const matchesGroup = filterGroup === 'Todos' || note.group === filterGroup;
+
+        if (!matchesSearch || !matchesGroup) return;
+
+        const card = document.createElement('div');
+        card.className = `note-card ${note.pinned ? 'pinned' : ''}`;
+        card.style.backgroundColor = note.color;
+        card.draggable = true;
+        card.dataset.index = originalIndex;
+
+        const colorDotsHTML = colors.map(c => 
+          `<div class="color-dot" style="background-color: ${c}" onclick="changeColor(${note.id}, '${c}')"></div>`
+        ).join('');
+
+        const groupOptionsHTML = groupsData.map(g => 
+          `<option value="${g}" ${note.group === g ? 'selected' : ''}>${g}</option>`
+        ).join('');
+
+        card.innerHTML = `
+          <div>
+            <div class="drag-handle">
+              <span>::: Arraste por aqui</span>
+              <div>
+                <button class="btn-pin ${note.pinned ? 'active' : ''}" onclick="togglePin(${note.id})" title="Fixar no topo">${note.pinned ? '📌' : '📍'}</button>
+                <span>#${note.group}</span>
+              </div>
+            </div>
+            <div class="note-title-bar">
+              <input type="text" class="note-title-input" value="${note.title}" onchange="updateTitle(${note.id}, this.value)">
+              <select class="group-select" onchange="updateGroup(${note.id}, this.value)">
+                ${groupOptionsHTML}
+              </select>
+            </div>
+            <div class="toolbar" style="margin-top: 10px;">
+              <button onmousedown="event.preventDefault()" onclick="execCmd('bold')" title="Negrito">B</button>
+              <button onmousedown="event.preventDefault()" onclick="execCmd('italic')" title="Itálico">I</button>
+              <button onmousedown="event.preventDefault()" onclick="execCmd('underline')" title="Sublinhado">U</button>
+              <button onmousedown="event.preventDefault()" onclick="changeFontSize(1)" title="Aumentar Texto">A+</button>
+              <button onmousedown="event.preventDefault()" onclick="changeFontSize(-1)" title="Diminuir Texto">A-</button>
+              <button onmousedown="event.preventDefault()" onclick="execCmd('insertUnorderedList')" title="Lista">• Lista</button>
+            </div>
+          </div>
+          <div class="note-content" contenteditable="true" oninput="updateContent(${note.id}, this.innerHTML)">${note.content}</div>
+          <div>
+            <div class="color-picker">
+              <span>Cor:</span>
+              ${colorDotsHTML}
+            </div>
+            <div class="note-footer">
+              <button class="btn-action" onclick="duplicateNote(${note.id})">Duplicar</button>
+              <button class="btn-action btn-delete" onclick="deleteNote(${note.id})">Excluir</button>
+            </div>
+          </div>
+        `;
+
+        card.addEventListener('dragstart', handleDragStart);
+        card.addEventListener('dragenter', handleDragEnter);
+        card.addEventListener('dragover', handleDragOver);
+        card.addEventListener('dragleave', handleDragLeave);
+        card.addEventListener('drop', handleDrop);
+        card.addEventListener('dragend', handleDragEnd);
+
+        const dragHandle = card.querySelector('.drag-handle');
+        dragHandle.addEventListener('touchstart', handleTouchStart, { passive: false });
+        dragHandle.addEventListener('touchmove', handleTouchMove, { passive: false });
+        dragHandle.addEventListener('touchend', handleTouchEnd);
+
+        columns[visibleIndex % columnCount].appendChild(card);
+        visibleIndex++;
+      });
+    }
+
+    window.addEventListener('resize', () => renderNotes());
+
+    function togglePin(id) {
+      const note = notesData.find(n => n.id === id);
+      if (note) {
+        note.pinned = !note.pinned;
+        saveToLocalStorage();
+        renderNotes();
+      }
+    }
+
+    function execCmd(command, value = null) {
+      document.execCommand(command, false, value);
+    }
+
+    function changeFontSize(direction) {
+      const selection = window.getSelection();
+      if (!selection.rangeCount || selection.isCollapsed) return;
+
+      let parent = selection.anchorNode.parentNode;
+      let currentSize = 3;
+
+      const fontNode = parent.closest('font[size]');
+      if (fontNode) {
+        currentSize = parseInt(fontNode.getAttribute('size')) || 3;
+      }
+
+      let newSize = currentSize + direction;
+      if (newSize < 2) newSize = 2;
+      if (newSize > 5) newSize = 5;
+
+      document.execCommand('fontSize', false, newSize);
+    }
+
+    function createNote() {
+      notesData.push({
+        id: Date.now(),
+        title: 'Nova Nota',
+        group: 'Geral',
+        color: '#ffffff',
+        pinned: false,
+        content: 'Digite seu texto aqui...'
+      });
+      saveToLocalStorage();
+      renderNotes();
+    }
+
+    function deleteNote(id) {
+      notesData = notesData.filter(n => n.id !== id);
+      saveToLocalStorage();
+      renderNotes();
+    }
+
+    function duplicateNote(id) {
+      const note = notesData.find(n => n.id === id);
+      if (note) {
+        notesData.push({ ...note, id: Date.now(), title: `${note.title} (Cópia)` });
+        saveToLocalStorage();
+        renderNotes();
+      }
+    }
+
+    function updateTitle(id, value) {
+      const note = notesData.find(n => n.id === id);
+      if (note) {
+        note.title = value;
+        saveToLocalStorage();
+      }
+    }
+
+    function updateContent(id, value) {
+      const note = notesData.find(n => n.id === id);
+      if (note) {
+        note.content = value;
+        saveToLocalStorage();
+      }
+    }
+
+    function updateGroup(id, value) {
+      const note = notesData.find(n => n.id === id);
+      if (note) {
+        note.group = value;
+        saveToLocalStorage();
+        renderNotes();
+      }
+    }
+
+    function changeColor(id, color) {
+      const note = notesData.find(n => n.id === id);
+      if (note) {
+        note.color = color;
+        saveToLocalStorage();
+        renderNotes();
+      }
+    }
+
+    function filterNotes() {
+      const text = document.getElementById('searchInput').value;
+      const group = document.getElementById('groupFilter').value;
+      renderNotes(text, group);
+    }
+
+    function exportNotes() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(notesData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "modular-notes.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importNotes(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            notesData = imported;
+            saveToLocalStorage();
+            renderNotes();
+            alert('Notas importadas com sucesso!');
+          } else {
+            alert('Arquivo JSON inválido.');
+          }
+        } catch (err) {
+          alert('Erro ao ler o arquivo JSON.');
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    /* Drag and Drop Desktop */
+    let dragSrcIndex = null;
+
+    function handleDragStart(e) {
+      dragSrcIndex = this.dataset.index;
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    }
+
+    function handleDragEnter(e) {
+      if (this.dataset.index !== dragSrcIndex) {
+        this.classList.add('drag-over');
+      }
+    }
+
+    function handleDragOver(e) {
+      if (e.preventDefault) e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      return false;
+    }
+
+    function handleDragLeave() {
+      this.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+      e.stopPropagation();
+      this.classList.remove('drag-over');
+      const targetIndex = this.dataset.index;
+
+      if (dragSrcIndex !== null && dragSrcIndex !== targetIndex) {
+        const movedItem = notesData.splice(dragSrcIndex, 1)[0];
+        notesData.splice(targetIndex, 0, movedItem);
+        saveToLocalStorage();
+        renderNotes();
+      }
+      return false;
+    }
+
+    function handleDragEnd() {
+      this.classList.remove('dragging');
+      document.querySelectorAll('.note-card').forEach(card => card.classList.remove('drag-over'));
+    }
+
+    /* Drag and Drop Mobile (Touch) */
+    let touchedCard = null;
+    let touchSrcIndex = null;
+
+    function handleTouchStart(e) {
+      touchedCard = this.closest('.note-card');
+      touchSrcIndex = touchedCard.dataset.index;
+      touchedCard.classList.add('dragging');
+    }
+
+    function handleTouchMove(e) {
+      if (!touchedCard) return;
+      e.preventDefault();
+      const touchLocation = e.touches[0];
+      const targetElement = document.elementFromPoint(touchLocation.clientX, touchLocation.clientY);
+      
+      document.querySelectorAll('.note-card').forEach(card => card.classList.remove('drag-over'));
+
+      if (targetElement) {
+        const targetCard = targetElement.closest('.note-card');
+        if (targetCard && targetCard !== touchedCard) {
+          targetCard.classList.add('drag-over');
+          const targetIndex = targetCard.dataset.index;
+          const movedItem = notesData.splice(touchSrcIndex, 1)[0];
+          notesData.splice(targetIndex, 0, movedItem);
+          touchSrcIndex = targetIndex;
+          saveToLocalStorage();
+          renderNotes();
+        }
+      }
+    }
+
+    function handleTouchEnd() {
+      if (touchedCard) {
+        touchedCard.classList.remove('dragging');
+        document.querySelectorAll('.note-card').forEach(card => card.classList.remove('drag-over'));
+        touchedCard = null;
+        touchSrcIndex = null;
+      }
+    }
+
+    renderNotes();
+  </script>
+</body>
+</html>
